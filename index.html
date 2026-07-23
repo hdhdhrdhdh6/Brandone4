@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Pong</title>
+
+<style>
+body {
+    margin: 0;
+    background: #111;
+    color: white;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+h1 {
+    font-size: 28px;
+}
+
+canvas {
+    background: black;
+    border: 3px solid white;
+    display: block;
+    margin: 10px auto;
+    max-width: 95vw;
+    touch-action: none;
+}
+
+button {
+    padding: 12px 25px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: none;
+    background: #2196f3;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏓 Pong</h1>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+<p id="score">Player 0 - 0 Computer</p>
+
+<button onclick="restart()">Restart</button>
+
+
+<script>
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let playerScore=0;
+let cpuScore=0;
+
+let player={
+    x:160,
+    y:550,
+    w:80,
+    h:12
+};
+
+let cpu={
+    x:160,
+    y:40,
+    w:80,
+    h:12
+};
+
+let ball={
+    x:200,
+    y:300,
+    r:8,
+    dx:4,
+    dy:4
+};
+
+
+function draw(){
+
+    ctx.clearRect(0,0,400,600);
+
+    // middle line
+    ctx.strokeStyle="white";
+    ctx.setLineDash([10,10]);
+    ctx.beginPath();
+    ctx.moveTo(0,300);
+    ctx.lineTo(400,300);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // paddles
+    ctx.fillStyle="white";
+
+    ctx.fillRect(
+        player.x,
+        player.y,
+        player.w,
+        player.h
+    );
+
+    ctx.fillRect(
+        cpu.x,
+        cpu.y,
+        cpu.w,
+        cpu.h
+    );
+
+    // ball
+    ctx.beginPath();
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.r,
+        0,
+        Math.PI*2
+    );
+    ctx.fill();
+}
+
+
+function update(){
+
+    ball.x+=ball.dx;
+    ball.y+=ball.dy;
+
+
+    // side walls
+    if(ball.x<0 || ball.x>400){
+        ball.dx*=-1;
+    }
+
+
+    // player hit
+    if(
+        ball.y+ball.r>player.y &&
+        ball.x>player.x &&
+        ball.x<player.x+player.w
+    ){
+        ball.dy=-Math.abs(ball.dy);
+    }
+
+
+    // cpu hit
+    if(
+        ball.y-ball.r<cpu.y+cpu.h &&
+        ball.x>cpu.x &&
+        ball.x<cpu.x+cpu.w
+    ){
+        ball.dy=Math.abs(ball.dy);
+    }
+
+
+    // cpu movement
+    cpu.x += (ball.x-(cpu.x+cpu.w/2))*0.05;
+
+
+    if(cpu.x<0) cpu.x=0;
+    if(cpu.x+cpu.w>400)
+        cpu.x=320;
+
+
+    // scoring
+
+    if(ball.y>600){
+        cpuScore++;
+        resetBall();
+    }
+
+    if(ball.y<0){
+        playerScore++;
+        resetBall();
+    }
+
+
+    document.getElementById("score").innerHTML =
+    "Player "+playerScore+" - "+cpuScore+" Computer";
+}
+
+
+function resetBall(){
+
+    ball.x=200;
+    ball.y=300;
+
+    ball.dx=(Math.random()>0.5?4:-4);
+    ball.dy=(Math.random()>0.5?4:-4);
+}
+
+
+function gameLoop(){
+
+    update();
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+
+// keyboard
+
+document.addEventListener("keydown",e=>{
+
+    if(e.key=="ArrowLeft")
+        player.x-=30;
+
+    if(e.key=="ArrowRight")
+        player.x+=30;
+
+    keepPlayer();
+});
+
+
+// touch / mouse
+
+function movePaddle(e){
+
+    let rect=canvas.getBoundingClientRect();
+
+    let x;
+
+    if(e.touches){
+        x=e.touches[0].clientX;
+    }else{
+        x=e.clientX;
+    }
+
+    player.x =
+    (x-rect.left)
+    *400/rect.width
+    -player.w/2;
+
+    keepPlayer();
+}
+
+
+canvas.addEventListener(
+"touchmove",
+movePaddle
+);
+
+canvas.addEventListener(
+"mousemove",
+movePaddle
+);
+
+
+function keepPlayer(){
+
+    if(player.x<0)
+        player.x=0;
+
+    if(player.x+player.w>400)
+        player.x=320;
+}
+
+
+function restart(){
+
+    playerScore=0;
+    cpuScore=0;
+
+    player.x=160;
+    cpu.x=160;
+
+    resetBall();
+}
+
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
